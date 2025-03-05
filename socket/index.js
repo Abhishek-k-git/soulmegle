@@ -205,7 +205,10 @@ io.on("connection", (socket) => {
       if (roomInfo) {
          const [roomId, room] = roomInfo;
          const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
-         io.to(partnerId).emit("offer", { offer });
+         console.log(`Forwarding WebRTC offer from ${socket.id} to ${partnerId}`);
+         io.to(partnerId).emit("offer", { offer, from: socket.id });
+      } else {
+         console.warn(`Received offer from ${socket.id} but no active room found`);
       }
    });
 
@@ -216,7 +219,10 @@ io.on("connection", (socket) => {
       if (roomInfo) {
          const [roomId, room] = roomInfo;
          const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
-         io.to(partnerId).emit("answer", { answer });
+         console.log(`Forwarding WebRTC answer from ${socket.id} to ${partnerId}`);
+         io.to(partnerId).emit("answer", { answer, from: socket.id });
+      } else {
+         console.warn(`Received answer from ${socket.id} but no active room found`);
       }
    });
 
@@ -227,7 +233,10 @@ io.on("connection", (socket) => {
       if (roomInfo) {
          const [roomId, room] = roomInfo;
          const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
-         io.to(partnerId).emit("ice_candidate", { candidate });
+         console.log(`Forwarding ICE candidate from ${socket.id} to ${partnerId}`);
+         io.to(partnerId).emit("ice_candidate", { candidate, from: socket.id });
+      } else {
+         console.warn(`Received ICE candidate from ${socket.id} but no active room found`);
       }
    });
 });

@@ -49,7 +49,7 @@ class SocketService {
       this.socket.on("match_found", ({ roomId }) => {
          if (roomId) {
             this._currentRoomId = roomId;
-            webRTCService.initializePeerConnection();
+            webRTCService.initializePeerConnection(true);
             webRTCService.getUserMedia()
                .then(stream => {
                   stream.getTracks().forEach(track => {
@@ -61,7 +61,7 @@ class SocketService {
          }
       });
 
-      this.socket.on("offer", async ({ offer }) => {
+      this.socket.on("offer", async ({ offer, from }) => {
          try {
             await webRTCService.handleOffer(offer);
          } catch (error) {
@@ -69,7 +69,7 @@ class SocketService {
          }
       });
 
-      this.socket.on("answer", async ({ answer }) => {
+      this.socket.on("answer", async ({ answer, from }) => {
          try {
             await webRTCService.handleAnswer(answer);
          } catch (error) {
@@ -77,7 +77,7 @@ class SocketService {
          }
       });
 
-      this.socket.on("ice_candidate", async ({ candidate }) => {
+      this.socket.on("ice_candidate", async ({ candidate, from }) => {
          try {
             await webRTCService.handleIceCandidate(candidate);
          } catch (error) {
