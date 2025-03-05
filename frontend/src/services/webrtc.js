@@ -15,6 +15,10 @@ const webRTCService = {
             iceCandidatePoolSize: 10
          });
 
+         webRTCService.peerConnection.ontrack = (event) => {
+            console.log("Received remote track", event.streams[0]);
+         };
+
          webRTCService.peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
                socketService.socket.emit("ice_candidate", {
@@ -22,16 +26,22 @@ const webRTCService = {
                });
             }
          };
+
+         webRTCService.peerConnection.oniceconnectionstatechange = () => {
+            console.log("ICE connection state:", webRTCService.peerConnection.iceConnectionState);
+         };
       }
    },
 
    getUserMedia: async () => {
       try {
-         return await navigator.mediaDevices.getUserMedia({
+         const stream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: true,
          });
+         return stream;
       } catch (error) {
+         console.error("Media access error:", error);
          throw new Error(
             "Failed to access media devices. Please check your camera and microphone permissions."
          );
@@ -42,9 +52,11 @@ const webRTCService = {
       if (!webRTCService.peerConnection) return;
       try {
          const offer = await webRTCService.peerConnection.createOffer();
+         console.log("Created offer:", offer);
          await webRTCService.peerConnection.setLocalDescription(offer);
          socketService.socket.emit("offer", { offer });
       } catch (error) {
+         console.error("Offer creation error:", error);
          throw new Error("Failed to create or send offer.");
       }
    },
@@ -52,6 +64,7 @@ const webRTCService = {
    handleOffer: async (offer) => {
       if (!webRTCService.peerConnection) return;
       try {
+         console.log("Handling offer:", offer);
          await webRTCService.peerConnection.setRemoteDescription(
             new RTCSessionDescription(offer)
          );
@@ -59,6 +72,7 @@ const webRTCService = {
          await webRTCService.peerConnection.setLocalDescription(answer);
          socketService.socket.emit("answer", { answer });
       } catch (error) {
+         console.error("Offer handling error:", error);
          throw new Error("Failed to process offer or create answer.");
       }
    },
@@ -66,10 +80,12 @@ const webRTCService = {
    handleAnswer: async (answer) => {
       if (!webRTCService.peerConnection) return;
       try {
+         console.log("Handling answer:", answer);
          await webRTCService.peerConnection.setRemoteDescription(
             new RTCSessionDescription(answer)
          );
       } catch (error) {
+         console.error("Answer handling error:", error);
          throw new Error("Failed to process answer.");
       }
    },
@@ -77,10 +93,12 @@ const webRTCService = {
    handleIceCandidate: async (candidate) => {
       if (!webRTCService.peerConnection) return;
       try {
+         console.log("Adding ICE candidate:", candidate);
          await webRTCService.peerConnection.addIceCandidate(
             new RTCIceCandidate(candidate)
          );
       } catch (error) {
+         console.error("ICE candidate error:", error);
          throw new Error("Failed to add ICE candidate.");
       }
    },

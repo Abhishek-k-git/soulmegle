@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import webRTCService from './webrtc';
 
 class SocketService {
    constructor() {
@@ -45,11 +46,47 @@ class SocketService {
       });
 
       this.socket.on("match_found", ({ roomId }) => {
-         if (roomId) this._currentRoomId = roomId;
+         if (roomId) {
+            this._currentRoomId = roomId;
+            webRTCService.initializePeerConnection();
+            webRTCService.getUserMedia()
+               .then(stream => {
+                  stream.getTracks().forEach(track => {
+                     webRTCService.peerConnection.addTrack(track, stream);
+                  });
+                  webRTCService.createOffer();
+               })
+               .catch(error => console.error("Error accessing media devices:", error));
+         }
+      });
+
+      this.socket.on("offer", async ({ offer }) => {
+         try {
+            await webRTCService.handleOffer(offer);
+         } catch (error) {
+            console.error("Error handling offer:", error);
+         }
+      });
+
+      this.socket.on("answer", async ({ answer }) => {
+         try {
+            await webRTCService.handleAnswer(answer);
+         } catch (error) {
+            console.error("Error handling answer:", error);
+         }
+      });
+
+      this.socket.on("ice_candidate", async ({ candidate }) => {
+         try {
+            await webRTCService.handleIceCandidate(candidate);
+         } catch (error) {
+            console.error("Error handling ICE candidate:", error);
+         }
       });
 
       this.socket.on("partner_left", () => {
          this._currentRoomId = null;
+         webRTCService.closeConnection();
       });
    }
 
