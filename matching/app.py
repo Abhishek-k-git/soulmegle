@@ -11,7 +11,7 @@ load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": os.getenv("SOCKET_SERVICE_URL")}})
+CORS(app, resources={r"/*": {"origins": os.getenv("SOCKET_SERVICE_URL", "http://localhost:5002")}})
 
 # Polling settings
 POLLING_INTERVAL = 3  # Every 3 seconds

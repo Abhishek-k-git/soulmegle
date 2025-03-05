@@ -15,7 +15,7 @@ const httpServer = createServer(app);
 // CORS configuration
 app.use(
    cors({
-      origin: process.env.FRONTEND_SERVICE_URL,
+      origin: [process.env.FRONTEND_SERVICE_URL, "http://localhost:5173"],
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       maxAge: 86400, // 24 hrs
