@@ -26,39 +26,52 @@ const VideoComp = () => {
 
       const initializeWebRTC = async () => {
          try {
+            // Clean up any existing socket listeners first
+            socketService.socket.off("offer");
+            socketService.socket.off("answer");
+            socketService.socket.off("ice_candidate");
+
+            // Initialize WebRTC connection
+            await webRTCService.initializePeerConnection();
+
+            // Set up media stream
             const stream = await webRTCService.getUserMedia();
             setLocalStream(stream);
             if (localVideoRef.current) {
                localVideoRef.current.srcObject = stream;
             }
 
-            if (!webRTCService.peerConnection) {
-               await webRTCService.initializePeerConnection();
-            }
-
+            // Add tracks to peer connection
             stream.getTracks().forEach((track) => {
                webRTCService.peerConnection.addTrack(track, stream);
             });
 
+            // Set up remote stream handling
             webRTCService.peerConnection.ontrack = (event) => {
                if (event.streams.length > 0 && remoteVideoRef.current) {
                   remoteVideoRef.current.srcObject = event.streams[0];
                }
             };
 
+            // Set up signaling handlers
             socketService.socket.on("offer", async ({ offer }) => {
+               console.log("Received offer");
                await webRTCService.handleOffer(offer);
             });
 
             socketService.socket.on("answer", async ({ answer }) => {
+               console.log("Received answer");
                await webRTCService.handleAnswer(answer);
             });
 
             socketService.socket.on("ice_candidate", async ({ candidate }) => {
+               console.log("Received ICE candidate");
                await webRTCService.handleIceCandidate(candidate);
             });
 
+            // Create offer if we are the initiator
             if (currentPartner.isInitiator) {
+               console.log("Creating offer as initiator");
                await webRTCService.createOffer();
             }
          } catch (err) {

@@ -4,7 +4,15 @@ const webRTCService = {
    initializePeerConnection: async () => {
       if (!webRTCService.peerConnection) {
          webRTCService.peerConnection = new RTCPeerConnection({
-            iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+            iceServers: [
+               { urls: "stun:stun.l.google.com:19302" },
+               { urls: "stun:stun1.l.google.com:19302" },
+               { urls: "stun:stun2.l.google.com:19302" },
+               { urls: "stun:stun3.l.google.com:19302" },
+               { urls: "stun:stun4.l.google.com:19302" }
+            ],
+            iceTransportPolicy: "all",
+            iceCandidatePoolSize: 10
          });
 
          webRTCService.peerConnection.onicecandidate = (event) => {
