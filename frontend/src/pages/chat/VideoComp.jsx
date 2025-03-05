@@ -21,18 +21,19 @@ const VideoComp = () => {
             });
             setLocalStream(null);
          }
-         webRTCService.closeConnection();
          return;
       }
 
       const initializeWebRTC = async () => {
          try {
-            await webRTCService.initializePeerConnection();
-
             const stream = await webRTCService.getUserMedia();
             setLocalStream(stream);
             if (localVideoRef.current) {
                localVideoRef.current.srcObject = stream;
+            }
+
+            if (!webRTCService.peerConnection) {
+               await webRTCService.initializePeerConnection();
             }
 
             stream.getTracks().forEach((track) => {
@@ -45,19 +46,23 @@ const VideoComp = () => {
                }
             };
 
-            webRTCService.peerConnection.oniceconnectionstatechange = () => {
-               const state = webRTCService.peerConnection.iceConnectionState;
-               if (state === 'disconnected' || state === 'failed') {
-                  setError('Connection lost. Please try again.');
-               }
-            };
+            socketService.socket.on("offer", async ({ offer }) => {
+               await webRTCService.handleOffer(offer);
+            });
+
+            socketService.socket.on("answer", async ({ answer }) => {
+               await webRTCService.handleAnswer(answer);
+            });
+
+            socketService.socket.on("ice_candidate", async ({ candidate }) => {
+               await webRTCService.handleIceCandidate(candidate);
+            });
 
             if (currentPartner.isInitiator) {
                await webRTCService.createOffer();
             }
          } catch (err) {
-            console.error('WebRTC initialization error:', err);
-            setError(err.message || 'Failed to initialize video chat');
+            setError(err.message || "Failed to initialize video chat");
          }
       };
 
@@ -71,6 +76,9 @@ const VideoComp = () => {
             setLocalStream(null);
          }
          webRTCService.closeConnection();
+         socketService.socket.off("offer");
+         socketService.socket.off("answer");
+         socketService.socket.off("ice_candidate");
       };
    }, [currentPartner?.roomId]);
 
@@ -115,7 +123,6 @@ const VideoComp = () => {
 
             if (newTrack) {
                await sender.replaceTrack(newTrack);
-               newTrack.enabled = true;
 
                tracks.forEach((t) => {
                   t.stop();

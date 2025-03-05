@@ -1,5 +1,4 @@
 import { io } from "socket.io-client";
-import webRTCService from './webrtc';
 
 class SocketService {
    constructor() {
@@ -17,7 +16,6 @@ class SocketService {
             autoConnect: false,
             path: '/socket.io/'
          });
-         window.socketService = this;
          this.setupDefaultListeners();
          this.socket.connect();
       }
@@ -47,47 +45,11 @@ class SocketService {
       });
 
       this.socket.on("match_found", ({ roomId }) => {
-         if (roomId) {
-            this._currentRoomId = roomId;
-            webRTCService.initializePeerConnection(true);
-            webRTCService.getUserMedia()
-               .then(stream => {
-                  stream.getTracks().forEach(track => {
-                     webRTCService.peerConnection.addTrack(track, stream);
-                  });
-                  webRTCService.createOffer();
-               })
-               .catch(error => console.error("Error accessing media devices:", error));
-         }
-      });
-
-      this.socket.on("offer", async ({ offer, from }) => {
-         try {
-            await webRTCService.handleOffer(offer);
-         } catch (error) {
-            console.error("Error handling offer:", error);
-         }
-      });
-
-      this.socket.on("answer", async ({ answer, from }) => {
-         try {
-            await webRTCService.handleAnswer(answer);
-         } catch (error) {
-            console.error("Error handling answer:", error);
-         }
-      });
-
-      this.socket.on("ice_candidate", async ({ candidate, from }) => {
-         try {
-            await webRTCService.handleIceCandidate(candidate);
-         } catch (error) {
-            console.error("Error handling ICE candidate:", error);
-         }
+         if (roomId) this._currentRoomId = roomId;
       });
 
       this.socket.on("partner_left", () => {
          this._currentRoomId = null;
-         webRTCService.closeConnection();
       });
    }
 
@@ -171,10 +133,10 @@ class SocketService {
          this.listeners.clear();
          this.socket.disconnect();
          this.socket = null;
-         window.socketService = null;
       }
    }
 }
 
+// Create a singleton instance
 const socketService = new SocketService();
 export default socketService;
