@@ -17,6 +17,7 @@ class SocketService {
             autoConnect: false,
             path: '/socket.io/'
          });
+         window.socketService = this;
          this.setupDefaultListeners();
          this.socket.connect();
       }
@@ -170,10 +171,10 @@ class SocketService {
          this.listeners.clear();
          this.socket.disconnect();
          this.socket = null;
+         window.socketService = null;
       }
    }
 }
 
-// Create a singleton instance
 const socketService = new SocketService();
 export default socketService;

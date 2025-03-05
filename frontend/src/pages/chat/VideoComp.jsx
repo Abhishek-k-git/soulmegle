@@ -39,15 +39,15 @@ const VideoComp = () => {
                webRTCService.peerConnection.addTrack(track, stream);
             });
 
+            if (currentPartner.isInitiator) {
+               await webRTCService.createOffer();
+            }
+
             webRTCService.peerConnection.ontrack = (event) => {
                if (event.streams.length > 0 && remoteVideoRef.current) {
                   remoteVideoRef.current.srcObject = event.streams[0];
                }
             };
-
-            if (currentPartner.isInitiator) {
-               await webRTCService.createOffer();
-            }
          } catch (err) {
             setError(err.message || "Failed to initialize video chat");
          }
@@ -68,12 +68,6 @@ const VideoComp = () => {
 
    const handleSwap = () => {
       setIsLocalMain(!isLocalMain);
-      if (localVideoRef.current && remoteVideoRef.current) {
-         const localStream = localVideoRef.current.srcObject;
-         const remoteStream = remoteVideoRef.current.srcObject;
-         localVideoRef.current.srcObject = remoteStream;
-         remoteVideoRef.current.srcObject = localStream;
-      }
    };
 
    const toggleMediaTrack = async (type) => {
@@ -113,6 +107,7 @@ const VideoComp = () => {
 
             if (newTrack) {
                await sender.replaceTrack(newTrack);
+               newTrack.enabled = true;
 
                tracks.forEach((t) => {
                   t.stop();
@@ -126,7 +121,6 @@ const VideoComp = () => {
                }
             }
          } catch (err) {
-            // console.error(`Failed to get ${type.toLowerCase()} access:`, err);
             if (type === "Audio") {
                setIsMicEnabled(false);
             } else {
