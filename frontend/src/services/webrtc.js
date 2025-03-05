@@ -70,9 +70,16 @@ class WebRTCService {
       if (!this.peerConnection) return;
       try {
          console.log("Handling offer:", offer);
-         await this.peerConnection.setRemoteDescription(
-            new RTCSessionDescription(offer)
-         );
+         const currentState = this.peerConnection.signalingState;
+         if (currentState !== "stable") {
+            console.log("Signaling state is not stable, rolling back");
+            await Promise.all([
+               this.peerConnection.setLocalDescription({ type: "rollback" }),
+               this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
+            ]);
+         } else {
+            await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+         }
          const answer = await this.peerConnection.createAnswer();
          await this.peerConnection.setLocalDescription(answer);
          if (window.socketService) {
@@ -88,9 +95,12 @@ class WebRTCService {
       if (!this.peerConnection) return;
       try {
          console.log("Handling answer:", answer);
-         await this.peerConnection.setRemoteDescription(
-            new RTCSessionDescription(answer)
-         );
+         const currentState = this.peerConnection.signalingState;
+         if (currentState === "have-local-offer") {
+            await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+         } else {
+            console.warn("Received answer in incorrect signaling state:", currentState);
+         }
       } catch (error) {
          console.error("Answer handling error:", error);
          throw new Error("Failed to process answer.");

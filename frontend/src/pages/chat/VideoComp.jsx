@@ -39,17 +39,25 @@ const VideoComp = () => {
                webRTCService.peerConnection.addTrack(track, stream);
             });
 
-            if (currentPartner.isInitiator) {
-               await webRTCService.createOffer();
-            }
-
             webRTCService.peerConnection.ontrack = (event) => {
                if (event.streams.length > 0 && remoteVideoRef.current) {
                   remoteVideoRef.current.srcObject = event.streams[0];
                }
             };
+
+            webRTCService.peerConnection.oniceconnectionstatechange = () => {
+               const state = webRTCService.peerConnection.iceConnectionState;
+               if (state === 'disconnected' || state === 'failed') {
+                  setError('Connection lost. Please try again.');
+               }
+            };
+
+            if (currentPartner.isInitiator) {
+               await webRTCService.createOffer();
+            }
          } catch (err) {
-            setError(err.message || "Failed to initialize video chat");
+            console.error('WebRTC initialization error:', err);
+            setError(err.message || 'Failed to initialize video chat');
          }
       };
 
