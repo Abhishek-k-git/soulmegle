@@ -2,7 +2,7 @@ import axios from "axios";
 import { API_ENDPOINTS } from "../utils/endpoints";
 
 const api = axios.create({
-   baseURL: [import.meta.env.VITE_BACKEND_SERVICE_URL, "http://localhost:5000"],
+   baseURL: import.meta.env.VITE_BACKEND_SERVICE_URL,
    headers: {
       "Content-Type": "application/json",
       Accept: "application/json",

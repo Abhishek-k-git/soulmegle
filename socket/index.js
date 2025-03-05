@@ -11,7 +11,7 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
    cors: {
-      origin: [process.env.FRONTEND_SERVICE_URL, "http://localhost:5173"],
+      origin: process.env.FRONTEND_SERVICE_URL,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       credentials: true,
       maxAge: 86400

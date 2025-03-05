@@ -74,6 +74,7 @@ function RegisterPage() {
                         placeholder="Email address"
                         value={formData.email}
                         onChange={handleChange}
+                        autoComplete="email"
                      />
                   </div>
                   <div>
@@ -85,6 +86,7 @@ function RegisterPage() {
                         placeholder="Password"
                         value={formData.password}
                         onChange={handleChange}
+                        autoComplete="current-password"
                      />
                   </div>
                   <div>
@@ -96,6 +98,7 @@ function RegisterPage() {
                         placeholder="Confirm Password"
                         value={formData.confirmPassword}
                         onChange={handleChange}
+                        autoComplete="current-password"
                      />
                   </div>
                </div>

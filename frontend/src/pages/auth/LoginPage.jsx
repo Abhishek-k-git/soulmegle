@@ -77,6 +77,7 @@ function LoginPage() {
                         placeholder="Email address"
                         value={formData.email}
                         onChange={handleChange}
+                        autoComplete="email"
                      />
                   </div>
 
@@ -89,6 +90,7 @@ function LoginPage() {
                         placeholder="Password"
                         value={formData.password}
                         onChange={handleChange}
+                        autoComplete="current-password"
                      />
                   </div>
                </div>
