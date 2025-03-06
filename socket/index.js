@@ -93,8 +93,6 @@ class RoomManager {
 const roomManager = new RoomManager();
 
 io.on("connection", (socket) => {
-   console.log(`User connected with socket id: ${socket.id}`);
-
    socket.on("join_waiting_room", async (user) => {
       try {
          const userObj = roomManager.addToWaitingRoom(socket, user);
@@ -103,7 +101,6 @@ io.on("connection", (socket) => {
          const otherUsers = roomManager.getOtherWaitingUsers(socket.id);
          if (otherUsers.length === 0) return;
 
-         // making request to matching service
          const response = await axios.post(
             `${process.env.MATCHING_SERVICE_URL}/api/match`,
             {
@@ -125,7 +122,6 @@ io.on("connection", (socket) => {
                socket.join(roomId);
                io.sockets.sockets.get(matchedUser.socketId)?.join(roomId);
 
-               // send to partner
                io.to(matchedUser.socketId).emit("match_found", {
                   roomId,
                   partner: {
@@ -134,7 +130,6 @@ io.on("connection", (socket) => {
                      commonInterests: response.data.matched_user_interests,
                   },
                });
-               // send to user
                socket.emit("match_found", {
                   roomId,
                   partner: {
@@ -147,7 +142,7 @@ io.on("connection", (socket) => {
             }
          }
       } catch (error) {
-         console.error("Error in join_waiting_room:", error);
+         socket.emit("error", { message: "Failed to join waiting room" });
       }
    });
 
@@ -177,9 +172,7 @@ io.on("connection", (socket) => {
    });
 
    socket.on("disconnect", () => {
-      console.log(`User disconnected: ${socket.id}`);
       roomManager.waitingUsers.delete(socket.id);
-
       const roomInfo = roomManager.removeFromRoom(socket.id);
       if (roomInfo) {
          io.to(roomInfo.partnerId).emit("partner_left");
@@ -198,14 +191,13 @@ io.on("connection", (socket) => {
       socket.leave(roomId);
    });
 
-   // WebRTC signaling handlers
    socket.on("offer", ({ offer }) => {
       const roomInfo = Array.from(roomManager.activeRooms.entries()).find(
          ([_, room]) => room.user1 === socket.id || room.user2 === socket.id
       );
 
       if (roomInfo) {
-         const [roomId, room] = roomInfo;
+         const [_, room] = roomInfo;
          const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
          io.to(partnerId).emit("offer", { offer });
       }
@@ -217,7 +209,7 @@ io.on("connection", (socket) => {
       );
 
       if (roomInfo) {
-         const [roomId, room] = roomInfo;
+         const [_, room] = roomInfo;
          const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
          io.to(partnerId).emit("answer", { answer });
       }
@@ -229,7 +221,7 @@ io.on("connection", (socket) => {
       );
 
       if (roomInfo) {
-         const [roomId, room] = roomInfo;
+         const [_, room] = roomInfo;
          const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
          io.to(partnerId).emit("ice_candidate", { candidate });
       }

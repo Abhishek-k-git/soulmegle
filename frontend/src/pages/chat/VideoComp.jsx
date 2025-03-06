@@ -24,17 +24,8 @@ const VideoComp = () => {
          return;
       }
 
-      // Listen for remote stream ready event
       const handleRemoteStream = (event) => {
-         if (
-            remoteVideoRef.current &&
-            event.detail &&
-            event.detail.stream
-         ) {
-            console.log(
-               "Setting remote stream to video element",
-               event.detail.stream
-            );
+         if (remoteVideoRef.current && event.detail?.stream) {
             remoteVideoRef.current.srcObject = event.detail.stream;
          }
       };
@@ -55,18 +46,6 @@ const VideoComp = () => {
 
             stream.getTracks().forEach((track) => {
                webRTCService.peerConnection.addTrack(track, stream);
-            });
-
-            socketService.socket.on("offer", async ({ offer }) => {
-               await webRTCService.handleOffer(offer);
-            });
-
-            socketService.socket.on("answer", async ({ answer }) => {
-               await webRTCService.handleAnswer(answer);
-            });
-
-            socketService.socket.on("ice_candidate", async ({ candidate }) => {
-               await webRTCService.handleIceCandidate(candidate);
             });
 
             if (currentPartner.isInitiator) {
@@ -90,19 +69,17 @@ const VideoComp = () => {
          socketService.socket.off("offer");
          socketService.socket.off("answer");
          socketService.socket.off("ice_candidate");
-         window.removeEventListener('remote-stream-ready', handleRemoteStream);
+         window.removeEventListener("remote-stream-ready", handleRemoteStream);
       };
    }, [currentPartner?.roomId]);
 
-   const handleSwap = () => {
-      setIsLocalMain(!isLocalMain);
-   };
+   const handleSwap = () => setIsLocalMain(!isLocalMain);
 
    const toggleMediaTrack = async (type) => {
       if (!localStream || !webRTCService.peerConnection) return;
 
       const tracks = localStream[`get${type}Tracks`]();
-      let track = tracks[0];
+      const track = tracks[0];
       if (!track) return;
 
       if (type === "Audio") {
@@ -135,14 +112,11 @@ const VideoComp = () => {
 
             if (newTrack) {
                await sender.replaceTrack(newTrack);
-
                tracks.forEach((t) => {
                   t.stop();
                   localStream.removeTrack(t);
                });
-
                localStream.addTrack(newTrack);
-
                if (type === "Video" && localVideoRef.current) {
                   localVideoRef.current.srcObject = localStream;
                }
@@ -156,7 +130,6 @@ const VideoComp = () => {
             setError(
                `Failed to enable ${type.toLowerCase()}. Please check your permissions.`
             );
-            return;
          }
       }
    };

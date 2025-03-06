@@ -18,19 +18,29 @@ const webRTCService = {
          };
 
          webRTCService.peerConnection.ontrack = (event) => {
-            console.log("Remote track received", event.streams);
             if (event.streams && event.streams[0]) {
                const remoteStream = event.streams[0];
-               // Store the remote stream reference to make it accessible
-               webRTCService.remoteStream = remoteStream;
-               
-               // Dispatch an event that the VideoComp component can listen for
-               const remoteStreamEvent = new CustomEvent('remote-stream-ready', {
-                  detail: { stream: remoteStream }
-               });
+               const remoteStreamEvent = new CustomEvent(
+                  "remote-stream-ready",
+                  {
+                     detail: { stream: remoteStream },
+                  }
+               );
                window.dispatchEvent(remoteStreamEvent);
             }
          };
+
+         socketService.socket.on("offer", async ({ offer }) => {
+            await webRTCService.handleOffer(offer);
+         });
+
+         socketService.socket.on("answer", async ({ answer }) => {
+            await webRTCService.handleAnswer(answer);
+         });
+
+         socketService.socket.on("ice_candidate", async ({ candidate }) => {
+            await webRTCService.handleIceCandidate(candidate);
+         });
       }
    },
 
