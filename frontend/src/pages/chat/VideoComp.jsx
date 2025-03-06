@@ -27,6 +27,9 @@ const VideoComp = () => {
       const handleRemoteStream = (event) => {
          if (remoteVideoRef.current && event.detail?.stream) {
             remoteVideoRef.current.srcObject = event.detail.stream;
+            remoteVideoRef.current.play().catch((err) => {
+               console.error("Error playing remote video:", err);
+            });
          }
       };
 
@@ -38,6 +41,9 @@ const VideoComp = () => {
             setLocalStream(stream);
             if (localVideoRef.current) {
                localVideoRef.current.srcObject = stream;
+               localVideoRef.current.play().catch((err) => {
+                  console.error("Error playing local video:", err);
+               });
             }
 
             if (!webRTCService.peerConnection) {
@@ -52,6 +58,7 @@ const VideoComp = () => {
                await webRTCService.createOffer();
             }
          } catch (err) {
+            console.error("WebRTC initialization error:", err);
             setError(err.message || "Failed to initialize video chat");
          }
       };
