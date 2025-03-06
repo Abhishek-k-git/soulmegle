@@ -14,11 +14,11 @@ const io = new Server(server, {
       origin: process.env.FRONTEND_SERVICE_URL,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       credentials: true,
-      maxAge: 86400
+      maxAge: 86400,
    },
    pingTimeout: 30000,
-   transports: ['websocket'],
-   path: "/socket.io/"
+   transports: ["websocket"],
+   path: "/socket.io/",
 });
 
 class RoomManager {
@@ -196,6 +196,43 @@ io.on("connection", (socket) => {
       io.to(roomId).emit("room_status", { status: "inactive", roomId });
       roomManager.activeRooms.delete(roomId);
       socket.leave(roomId);
+   });
+
+   // WebRTC signaling handlers
+   socket.on("offer", ({ offer }) => {
+      const roomInfo = Array.from(roomManager.activeRooms.entries()).find(
+         ([_, room]) => room.user1 === socket.id || room.user2 === socket.id
+      );
+
+      if (roomInfo) {
+         const [roomId, room] = roomInfo;
+         const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
+         io.to(partnerId).emit("offer", { offer });
+      }
+   });
+
+   socket.on("answer", ({ answer }) => {
+      const roomInfo = Array.from(roomManager.activeRooms.entries()).find(
+         ([_, room]) => room.user1 === socket.id || room.user2 === socket.id
+      );
+
+      if (roomInfo) {
+         const [roomId, room] = roomInfo;
+         const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
+         io.to(partnerId).emit("answer", { answer });
+      }
+   });
+
+   socket.on("ice_candidate", ({ candidate }) => {
+      const roomInfo = Array.from(roomManager.activeRooms.entries()).find(
+         ([_, room]) => room.user1 === socket.id || room.user2 === socket.id
+      );
+
+      if (roomInfo) {
+         const [roomId, room] = roomInfo;
+         const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
+         io.to(partnerId).emit("ice_candidate", { candidate });
+      }
    });
 });
 

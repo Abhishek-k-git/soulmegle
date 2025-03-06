@@ -1,4 +1,4 @@
-import socketService from './socket';
+import socketService from "./socket";
 
 const webRTCService = {
    peerConnection: null,
@@ -16,9 +16,20 @@ const webRTCService = {
                });
             }
          };
-         
+
          webRTCService.peerConnection.ontrack = (event) => {
             console.log("Remote track received", event.streams);
+            if (event.streams && event.streams[0]) {
+               const remoteStream = event.streams[0];
+               // Store the remote stream reference to make it accessible
+               webRTCService.remoteStream = remoteStream;
+               
+               // Dispatch an event that the VideoComp component can listen for
+               const remoteStreamEvent = new CustomEvent('remote-stream-ready', {
+                  detail: { stream: remoteStream }
+               });
+               window.dispatchEvent(remoteStreamEvent);
+            }
          };
       }
    },

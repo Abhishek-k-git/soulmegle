@@ -24,6 +24,23 @@ const VideoComp = () => {
          return;
       }
 
+      // Listen for remote stream ready event
+      const handleRemoteStream = (event) => {
+         if (
+            remoteVideoRef.current &&
+            event.detail &&
+            event.detail.stream
+         ) {
+            console.log(
+               "Setting remote stream to video element",
+               event.detail.stream
+            );
+            remoteVideoRef.current.srcObject = event.detail.stream;
+         }
+      };
+
+      window.addEventListener("remote-stream-ready", handleRemoteStream);
+
       const initializeWebRTC = async () => {
          try {
             const stream = await webRTCService.getUserMedia();
@@ -39,12 +56,6 @@ const VideoComp = () => {
             stream.getTracks().forEach((track) => {
                webRTCService.peerConnection.addTrack(track, stream);
             });
-
-            webRTCService.peerConnection.ontrack = (event) => {
-               if (event.streams.length > 0 && remoteVideoRef.current) {
-                  remoteVideoRef.current.srcObject = event.streams[0];
-               }
-            };
 
             socketService.socket.on("offer", async ({ offer }) => {
                await webRTCService.handleOffer(offer);
@@ -79,6 +90,7 @@ const VideoComp = () => {
          socketService.socket.off("offer");
          socketService.socket.off("answer");
          socketService.socket.off("ice_candidate");
+         window.removeEventListener('remote-stream-ready', handleRemoteStream);
       };
    }, [currentPartner?.roomId]);
 
