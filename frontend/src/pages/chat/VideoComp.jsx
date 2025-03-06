@@ -73,7 +73,14 @@ const VideoComp = () => {
       };
    }, [currentPartner?.roomId]);
 
-   const handleSwap = () => setIsLocalMain(!isLocalMain);
+   const handleSwap = () => {
+      setIsLocalMain(!isLocalMain);
+      if (localVideoRef.current && remoteVideoRef.current) {
+         const tempStream = localVideoRef.current.srcObject;
+         localVideoRef.current.srcObject = remoteVideoRef.current.srcObject;
+         remoteVideoRef.current.srcObject = tempStream;
+      }
+   };
 
    const toggleMediaTrack = async (type) => {
       if (!localStream || !webRTCService.peerConnection) return;
