@@ -55,6 +55,8 @@ const webRTCService = {
                      }))
                   );
                   const remoteStream = event.streams[0];
+                  
+                  // Dispatch event for components that listen for it
                   const remoteStreamEvent = new CustomEvent(
                      "remote-stream-ready",
                      {
@@ -62,6 +64,13 @@ const webRTCService = {
                      }
                   );
                   window.dispatchEvent(remoteStreamEvent);
+                  
+                  // Log more detailed information about the stream
+                  console.log("Remote stream received:", {
+                     id: remoteStream.id,
+                     active: remoteStream.active,
+                     trackCount: remoteStream.getTracks().length
+                  });
                } else {
                   console.log("Track event received but no streams available");
                }

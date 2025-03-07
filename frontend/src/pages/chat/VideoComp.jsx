@@ -41,6 +41,7 @@ const VideoComp = () => {
       const setupConnectionHandlers = () => {
          if (!webRTCService.peerConnection) return;
 
+         // Monitor connection state changes
          webRTCService.peerConnection.oniceconnectionstatechange = () => {
             const state = webRTCService.peerConnection.iceConnectionState;
             console.log("ICE Connection State Change:", {
@@ -72,6 +73,25 @@ const VideoComp = () => {
                   webRTCService.peerConnection.iceGatheringState,
                signalingState: webRTCService.peerConnection.signalingState,
             }));
+         };
+
+         // Ensure ontrack handler is properly set up in the component
+         webRTCService.peerConnection.ontrack = (event) => {
+            console.log("Track Event in VideoComp:", {
+               kind: event.track.kind,
+               id: event.track.id,
+               enabled: event.track.enabled,
+            });
+
+            if (event.streams && event.streams[0]) {
+               console.log("Setting remote stream directly from ontrack event");
+               if (remoteVideoRef.current) {
+                  remoteVideoRef.current.srcObject = event.streams[0];
+                  remoteVideoRef.current.play().catch((err) => {
+                     console.error("Error playing remote video:", err);
+                  });
+               }
+            }
          };
       };
       //
@@ -108,17 +128,26 @@ const VideoComp = () => {
       initializeWebRTC();
 
       return () => {
+         // Clean up local media tracks
          if (localStream) {
             localStream.getTracks().forEach((track) => {
                track.stop();
             });
             setLocalStream(null);
          }
-         webRTCService.closeConnection();
-         socketService.socket.off("offer");
-         socketService.socket.off("answer");
-         socketService.socket.off("ice_candidate");
+
+         // Make sure we properly clean up all socket listeners
+         if (socketService.socket) {
+            socketService.socket.off("offer");
+            socketService.socket.off("answer");
+            socketService.socket.off("ice_candidate");
+         }
+
+         // Remove the custom event listener
          window.removeEventListener("remote-stream-ready", handleRemoteStream);
+
+         // Close the WebRTC connection last
+         webRTCService.closeConnection();
       };
    }, [currentPartner?.roomId]);
 
