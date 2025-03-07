@@ -11,7 +11,7 @@ const webRTCService = {
                { urls: "stun:stun1.l.google.com:19302" },
                { urls: "stun:stun2.l.google.com:19302" },
                { urls: "stun:stun3.l.google.com:19302" },
-               { urls: "stun:stun4.l.google.com:19302" }
+               { urls: "stun:stun4.l.google.com:19302" },
             ],
          });
 
@@ -37,11 +37,17 @@ const webRTCService = {
          };
 
          webRTCService.peerConnection.oniceconnectionstatechange = () => {
-            console.log("ICE Connection State:", webRTCService.peerConnection.iceConnectionState);
+            console.log(
+               "ICE Connection State:",
+               webRTCService.peerConnection.iceConnectionState
+            );
          };
 
          webRTCService.peerConnection.onconnectionstatechange = () => {
-            console.log("Connection State:", webRTCService.peerConnection.connectionState);
+            console.log(
+               "Connection State:",
+               webRTCService.peerConnection.connectionState
+            );
          };
 
          socketService.socket.on("offer", async ({ offer }) => {
@@ -60,10 +66,16 @@ const webRTCService = {
 
    getUserMedia: async () => {
       try {
-         return await navigator.mediaDevices.getUserMedia({
+         const stream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: true,
          });
+         if (webRTCService.peerConnection) {
+            stream.getTracks().forEach((track) => {
+               webRTCService.peerConnection.addTrack(track, stream);
+            });
+         }
+         return stream;
       } catch (error) {
          throw new Error(
             "Failed to access media devices. Please check your camera and microphone permissions."
