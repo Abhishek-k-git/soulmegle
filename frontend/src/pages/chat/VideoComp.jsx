@@ -37,38 +37,44 @@ const VideoComp = () => {
 
       window.addEventListener("remote-stream-ready", handleRemoteStream);
 
-      // 
-      webRTCService.peerConnection.oniceconnectionstatechange = () => {
-         const state = webRTCService.peerConnection.iceConnectionState;
-         console.log("ICE Connection State Change:", {
-            state,
-            timestamp: new Date().toISOString(),
-         });
-         setConnectionStatus(state);
-         setDebugInfo((prev) => ({
-            ...prev,
-            iceConnectionState: state,
-            timestamp: new Date().toISOString(),
-         }));
-      };
+      //
+      const setupConnectionHandlers = () => {
+         if (!webRTCService.peerConnection) return;
 
-      webRTCService.peerConnection.onconnectionstatechange = () => {
-         const state = webRTCService.peerConnection.connectionState;
-         console.log("Connection State Change:", {
-            state,
-            timestamp: new Date().toISOString(),
-            iceGatheringState: webRTCService.peerConnection.iceGatheringState,
-            signalingState: webRTCService.peerConnection.signalingState,
-         });
-         setConnectionStatus(state);
-         setDebugInfo((prev) => ({
-            ...prev,
-            connectionState: state,
-            iceGatheringState: webRTCService.peerConnection.iceGatheringState,
-            signalingState: webRTCService.peerConnection.signalingState,
-         }));
+         webRTCService.peerConnection.oniceconnectionstatechange = () => {
+            const state = webRTCService.peerConnection.iceConnectionState;
+            console.log("ICE Connection State Change:", {
+               state,
+               timestamp: new Date().toISOString(),
+            });
+            setConnectionStatus(state);
+            setDebugInfo((prev) => ({
+               ...prev,
+               iceConnectionState: state,
+               timestamp: new Date().toISOString(),
+            }));
+         };
+
+         webRTCService.peerConnection.onconnectionstatechange = () => {
+            const state = webRTCService.peerConnection.connectionState;
+            console.log("Connection State Change:", {
+               state,
+               timestamp: new Date().toISOString(),
+               iceGatheringState:
+                  webRTCService.peerConnection.iceGatheringState,
+               signalingState: webRTCService.peerConnection.signalingState,
+            });
+            setConnectionStatus(state);
+            setDebugInfo((prev) => ({
+               ...prev,
+               connectionState: state,
+               iceGatheringState:
+                  webRTCService.peerConnection.iceGatheringState,
+               signalingState: webRTCService.peerConnection.signalingState,
+            }));
+         };
       };
-      // 
+      //
 
       const initializeWebRTC = async () => {
          try {
@@ -83,6 +89,7 @@ const VideoComp = () => {
 
             if (!webRTCService.peerConnection) {
                await webRTCService.initializePeerConnection();
+               setupConnectionHandlers();
             }
 
             stream.getTracks().forEach((track) => {
