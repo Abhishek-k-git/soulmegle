@@ -16,7 +16,17 @@ const webRTCService = {
          });
 
          webRTCService.peerConnection.onicecandidate = (event) => {
+            console.log(
+               "ICE Candidate Event:",
+               event.candidate ? "New candidate" : "Null candidate"
+            );
             if (event.candidate) {
+               console.log("ICE Candidate Details:", {
+                  type: event.candidate.type,
+                  protocol: event.candidate.protocol,
+                  address: event.candidate.address,
+                  port: event.candidate.port,
+               });
                socketService.socket.emit("ice_candidate", {
                   candidate: event.candidate,
                });
@@ -24,7 +34,25 @@ const webRTCService = {
          };
 
          webRTCService.peerConnection.ontrack = (event) => {
+            console.log("Track Event Details:", {
+               kind: event.track.kind,
+               id: event.track.id,
+               label: event.track.label,
+               enabled: event.track.enabled,
+               readyState: event.track.readyState,
+            });
             if (event.streams && event.streams[0]) {
+               const tracks = event.streams[0].getTracks();
+               console.log(
+                  "Remote Stream Tracks:",
+                  tracks.map((track) => ({
+                     kind: track.kind,
+                     id: track.id,
+                     label: track.label,
+                     enabled: track.enabled,
+                     readyState: track.readyState,
+                  }))
+               );
                const remoteStream = event.streams[0];
                const remoteStreamEvent = new CustomEvent(
                   "remote-stream-ready",
@@ -33,21 +61,28 @@ const webRTCService = {
                   }
                );
                window.dispatchEvent(remoteStreamEvent);
+            } else {
+               console.warn("Track event received but no streams available");
             }
          };
 
          webRTCService.peerConnection.oniceconnectionstatechange = () => {
-            console.log(
-               "ICE Connection State:",
-               webRTCService.peerConnection.iceConnectionState
-            );
+            const state = webRTCService.peerConnection.iceConnectionState;
+            console.log("ICE Connection State Change:", {
+               state,
+               timestamp: new Date().toISOString(),
+            });
          };
 
          webRTCService.peerConnection.onconnectionstatechange = () => {
-            console.log(
-               "Connection State:",
-               webRTCService.peerConnection.connectionState
-            );
+            const state = webRTCService.peerConnection.connectionState;
+            console.log("Connection State Change:", {
+               state,
+               timestamp: new Date().toISOString(),
+               iceGatheringState:
+                  webRTCService.peerConnection.iceGatheringState,
+               signalingState: webRTCService.peerConnection.signalingState,
+            });
          };
 
          socketService.socket.on("offer", async ({ offer }) => {
@@ -86,8 +121,11 @@ const webRTCService = {
    createOffer: async () => {
       if (!webRTCService.peerConnection) return;
       try {
+         console.log("Creating WebRTC offer...");
          const offer = await webRTCService.peerConnection.createOffer();
+         console.log("Offer created:", offer);
          await webRTCService.peerConnection.setLocalDescription(offer);
+         console.log("Local description set");
          socketService.socket.emit("offer", { offer });
       } catch (error) {
          throw new Error("Failed to create or send offer.");
@@ -97,11 +135,15 @@ const webRTCService = {
    handleOffer: async (offer) => {
       if (!webRTCService.peerConnection) return;
       try {
+         console.log("Received offer:", offer);
          await webRTCService.peerConnection.setRemoteDescription(
             new RTCSessionDescription(offer)
          );
+         console.log("Remote description set");
          const answer = await webRTCService.peerConnection.createAnswer();
+         console.log("Answer created:", answer);
          await webRTCService.peerConnection.setLocalDescription(answer);
+         console.log("Local description set");
          socketService.socket.emit("answer", { answer });
       } catch (error) {
          throw new Error("Failed to process offer or create answer.");
