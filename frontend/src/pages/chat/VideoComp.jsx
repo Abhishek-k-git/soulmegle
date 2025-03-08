@@ -24,68 +24,13 @@ const VideoComp = () => {
          return;
       }
 
-      const handleRemoteStream = (event) => {
-         if (remoteVideoRef.current && event.detail?.stream) {
-            remoteVideoRef.current.srcObject = event.detail.stream;
-            remoteVideoRef.current.play().catch((err) => {
-               console.error("Error playing remote video:", err);
-            });
-         }
-      };
-
-      window.addEventListener("remote-stream-ready", handleRemoteStream);
-
-      const initializeWebRTC = async () => {
-         try {
-            const stream = await webRTCService.getUserMedia();
-            setLocalStream(stream);
-            if (localVideoRef.current) {
-               localVideoRef.current.srcObject = stream;
-               localVideoRef.current.play().catch((err) => {
-                  console.error("Error playing local video:", err);
-               });
-            }
-
-            if (!webRTCService.peerConnection) {
-               await webRTCService.initializePeerConnection();
-            }
-
-            stream.getTracks().forEach((track) => {
-               webRTCService.peerConnection.addTrack(track, stream);
-            });
-
-            if (currentPartner.isInitiator) {
-               await webRTCService.createOffer();
-            }
-         } catch (err) {
-            console.error("WebRTC initialization error:", err);
-            setError(err.message || "Failed to initialize video chat");
-         }
-      };
-
-      initializeWebRTC();
-
       return () => {
-         // Clean up local media tracks
          if (localStream) {
             localStream.getTracks().forEach((track) => {
                track.stop();
             });
             setLocalStream(null);
          }
-
-         // Make sure we properly clean up all socket listeners
-         if (socketService.socket) {
-            socketService.socket.off("offer");
-            socketService.socket.off("answer");
-            socketService.socket.off("ice_candidate");
-         }
-
-         // Remove the custom event listener
-         window.removeEventListener("remote-stream-ready", handleRemoteStream);
-
-         // Close the WebRTC connection last
-         webRTCService.closeConnection();
       };
    }, [currentPartner?.roomId]);
 
@@ -99,7 +44,7 @@ const VideoComp = () => {
    };
 
    const toggleMediaTrack = async (type) => {
-      if (!localStream || !webRTCService.peerConnection) return;
+      if (!localStream) return;
 
       const tracks = localStream[`get${type}Tracks`]();
       const track = tracks[0];
@@ -111,19 +56,9 @@ const VideoComp = () => {
          setIsCameraEnabled(!isCameraEnabled);
       }
 
-      const sender = webRTCService.peerConnection
-         .getSenders()
-         .find((s) => s.track?.kind === type.toLowerCase());
-
-      if (!sender) return;
-
       if (track.enabled) {
          track.enabled = false;
          track.stop();
-         if (sender.track) {
-            sender.track.enabled = false;
-            sender.track.stop();
-         }
       } else {
          try {
             const constraints =
@@ -134,7 +69,6 @@ const VideoComp = () => {
             const newTrack = newStream[`get${type}Tracks`]()[0];
 
             if (newTrack) {
-               await sender.replaceTrack(newTrack);
                tracks.forEach((t) => {
                   t.stop();
                   localStream.removeTrack(t);

@@ -190,42 +190,6 @@ io.on("connection", (socket) => {
       roomManager.activeRooms.delete(roomId);
       socket.leave(roomId);
    });
-
-   socket.on("offer", ({ offer }) => {
-      const roomInfo = Array.from(roomManager.activeRooms.entries()).find(
-         ([_, room]) => room.user1 === socket.id || room.user2 === socket.id
-      );
-
-      if (roomInfo) {
-         const [_, room] = roomInfo;
-         const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
-         io.to(partnerId).emit("offer", { offer });
-      }
-   });
-
-   socket.on("answer", ({ answer }) => {
-      const roomInfo = Array.from(roomManager.activeRooms.entries()).find(
-         ([_, room]) => room.user1 === socket.id || room.user2 === socket.id
-      );
-
-      if (roomInfo) {
-         const [_, room] = roomInfo;
-         const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
-         io.to(partnerId).emit("answer", { answer });
-      }
-   });
-
-   socket.on("ice_candidate", ({ candidate }) => {
-      const roomInfo = Array.from(roomManager.activeRooms.entries()).find(
-         ([_, room]) => room.user1 === socket.id || room.user2 === socket.id
-      );
-
-      if (roomInfo) {
-         const [_, room] = roomInfo;
-         const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
-         io.to(partnerId).emit("ice_candidate", { candidate });
-      }
-   });
 });
 
 const PORT = process.env.PORT || 5002;
