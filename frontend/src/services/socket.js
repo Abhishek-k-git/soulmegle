@@ -5,6 +5,7 @@ class SocketService {
       this.socket = null;
       this.listeners = new Map();
       this._currentRoomId = null;
+      this._isInVideoCall = false;
    }
 
    connect() {
@@ -72,8 +73,51 @@ class SocketService {
 
    onPartnerLeft(callback) {
       if (this.socket) {
-         this.socket.on("partner_left", callback);
+         this.socket.on("partner_left", () => {
+            this._isInVideoCall = false;
+            callback();
+         });
          this.listeners.set("partner_left", callback);
+      }
+   }
+
+   // WebRTC signaling methods
+   emitOffer(offer) {
+      if (this.socket && this._currentRoomId) {
+         this.socket.emit("offer", { offer, roomId: this._currentRoomId });
+      }
+   }
+
+   emitAnswer(answer) {
+      if (this.socket && this._currentRoomId) {
+         this.socket.emit("answer", { answer, roomId: this._currentRoomId });
+      }
+   }
+
+   emitIceCandidate(candidate) {
+      if (this.socket && this._currentRoomId) {
+         this.socket.emit("ice-candidate", { candidate, roomId: this._currentRoomId });
+      }
+   }
+
+   onOffer(callback) {
+      if (this.socket) {
+         this.socket.on("offer", ({ offer }) => {
+            this._isInVideoCall = true;
+            callback(offer);
+         });
+      }
+   }
+
+   onAnswer(callback) {
+      if (this.socket) {
+         this.socket.on("answer", ({ answer }) => callback(answer));
+      }
+   }
+
+   onIceCandidate(callback) {
+      if (this.socket) {
+         this.socket.on("ice-candidate", ({ candidate }) => callback(candidate));
       }
    }
 

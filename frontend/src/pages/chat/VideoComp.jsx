@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-// import webRTCService from "../../services/webrtc";
-// import socketService from "../../services/socket";
+import webRTCService from "../../services/webrtc";
+import socketService from "../../services/socket";
 
 const VideoComp = () => {
    const localVideoRef = useRef(null);
@@ -15,22 +15,38 @@ const VideoComp = () => {
 
    useEffect(() => {
       if (!currentPartner?.roomId) {
-         if (localStream) {
-            localStream.getTracks().forEach((track) => {
-               track.stop();
-            });
-            setLocalStream(null);
-         }
+         webRTCService.closeConnection();
+         setLocalStream(null);
          return;
       }
 
-      return () => {
-         if (localStream) {
-            localStream.getTracks().forEach((track) => {
-               track.stop();
-            });
-            setLocalStream(null);
+      const initializeWebRTC = async () => {
+         try {
+            const stream = await webRTCService.initialize(
+               socketService,
+               (remoteStream) => {
+                  if (remoteVideoRef.current) {
+                     remoteVideoRef.current.srcObject = remoteStream;
+                  }
+               }
+            );
+            setLocalStream(stream);
+            if (localVideoRef.current) {
+               localVideoRef.current.srcObject = stream;
+            }
+            await webRTCService.initiateCall();
+         } catch (err) {
+            setError(
+               "Failed to initialize video call. Please check your permissions."
+            );
          }
+      };
+
+      initializeWebRTC();
+
+      return () => {
+         webRTCService.closeConnection();
+         setLocalStream(null);
       };
    }, [currentPartner?.roomId]);
 
@@ -43,51 +59,17 @@ const VideoComp = () => {
       }
    };
 
-   const toggleMediaTrack = async (type) => {
+   const toggleMediaTrack = (type) => {
       if (!localStream) return;
 
-      const tracks = localStream[`get${type}Tracks`]();
-      const track = tracks[0];
-      if (!track) return;
-
       if (type === "Audio") {
-         setIsMicEnabled(!isMicEnabled);
+         const newState = !isMicEnabled;
+         setIsMicEnabled(newState);
+         webRTCService.toggleAudio(newState);
       } else {
-         setIsCameraEnabled(!isCameraEnabled);
-      }
-
-      if (track.enabled) {
-         track.enabled = false;
-         track.stop();
-      } else {
-         try {
-            const constraints =
-               type === "Audio" ? { audio: true } : { video: true };
-            const newStream = await navigator.mediaDevices.getUserMedia(
-               constraints
-            );
-            const newTrack = newStream[`get${type}Tracks`]()[0];
-
-            if (newTrack) {
-               tracks.forEach((t) => {
-                  t.stop();
-                  localStream.removeTrack(t);
-               });
-               localStream.addTrack(newTrack);
-               if (type === "Video" && localVideoRef.current) {
-                  localVideoRef.current.srcObject = localStream;
-               }
-            }
-         } catch (err) {
-            if (type === "Audio") {
-               setIsMicEnabled(false);
-            } else {
-               setIsCameraEnabled(false);
-            }
-            setError(
-               `Failed to enable ${type.toLowerCase()}. Please check your permissions.`
-            );
-         }
+         const newState = !isCameraEnabled;
+         setIsCameraEnabled(newState);
+         webRTCService.toggleVideo(newState);
       }
    };
 
