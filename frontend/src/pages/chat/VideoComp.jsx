@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import webRTCService from "../../services/webrtc";
-import socketService from "../../services/socket";
+// import webRTCService from "../../services/webrtc";
+// import socketService from "../../services/socket";
 
 const VideoComp = () => {
    const localVideoRef = useRef(null);
