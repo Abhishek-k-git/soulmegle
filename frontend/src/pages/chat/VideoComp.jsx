@@ -12,8 +12,6 @@ const VideoComp = () => {
    const [isCameraEnabled, setIsCameraEnabled] = useState(true);
    const [localStream, setLocalStream] = useState(null);
    const [error, setError] = useState(null);
-   const [connectionStatus, setConnectionStatus] = useState(null);
-   const [debugInfo, setDebugInfo] = useState({});
 
    useEffect(() => {
       if (!currentPartner?.roomId) {
@@ -37,65 +35,6 @@ const VideoComp = () => {
 
       window.addEventListener("remote-stream-ready", handleRemoteStream);
 
-      //
-      const setupConnectionHandlers = () => {
-         if (!webRTCService.peerConnection) return;
-
-         // Monitor connection state changes
-         webRTCService.peerConnection.oniceconnectionstatechange = () => {
-            const state = webRTCService.peerConnection.iceConnectionState;
-            console.log("ICE Connection State Change:", {
-               state,
-               timestamp: new Date().toISOString(),
-            });
-            setConnectionStatus(state);
-            setDebugInfo((prev) => ({
-               ...prev,
-               iceConnectionState: state,
-               timestamp: new Date().toISOString(),
-            }));
-         };
-
-         webRTCService.peerConnection.onconnectionstatechange = () => {
-            const state = webRTCService.peerConnection.connectionState;
-            console.log("Connection State Change:", {
-               state,
-               timestamp: new Date().toISOString(),
-               iceGatheringState:
-                  webRTCService.peerConnection.iceGatheringState,
-               signalingState: webRTCService.peerConnection.signalingState,
-            });
-            setConnectionStatus(state);
-            setDebugInfo((prev) => ({
-               ...prev,
-               connectionState: state,
-               iceGatheringState:
-                  webRTCService.peerConnection.iceGatheringState,
-               signalingState: webRTCService.peerConnection.signalingState,
-            }));
-         };
-
-         // Ensure ontrack handler is properly set up in the component
-         webRTCService.peerConnection.ontrack = (event) => {
-            console.log("Track Event in VideoComp:", {
-               kind: event.track.kind,
-               id: event.track.id,
-               enabled: event.track.enabled,
-            });
-
-            if (event.streams && event.streams[0]) {
-               console.log("Setting remote stream directly from ontrack event");
-               if (remoteVideoRef.current) {
-                  remoteVideoRef.current.srcObject = event.streams[0];
-                  remoteVideoRef.current.play().catch((err) => {
-                     console.error("Error playing remote video:", err);
-                  });
-               }
-            }
-         };
-      };
-      //
-
       const initializeWebRTC = async () => {
          try {
             const stream = await webRTCService.getUserMedia();
@@ -109,7 +48,6 @@ const VideoComp = () => {
 
             if (!webRTCService.peerConnection) {
                await webRTCService.initializePeerConnection();
-               setupConnectionHandlers();
             }
 
             stream.getTracks().forEach((track) => {

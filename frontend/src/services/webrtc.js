@@ -170,9 +170,11 @@ const webRTCService = {
    handleAnswer: async (answer) => {
       if (!webRTCService.peerConnection) return;
       try {
+         console.log('Received answer:', answer);
          await webRTCService.peerConnection.setRemoteDescription(
             new RTCSessionDescription(answer)
          );
+         console.log('Successfully set remote description from answer');
       } catch (error) {
          console.log(error);
          throw new Error("Failed to process answer.");
@@ -182,9 +184,11 @@ const webRTCService = {
    handleIceCandidate: async (candidate) => {
       if (!webRTCService.peerConnection) return;
       try {
+         console.log('Adding ICE candidate:', candidate);
          await webRTCService.peerConnection.addIceCandidate(
             new RTCIceCandidate(candidate)
          );
+         console.log('Successfully added ICE candidate');
       } catch (error) {
          console.log(error);
          throw new Error("Failed to add ICE candidate.");
